@@ -311,6 +311,3 @@ menu.add_cascade(label="Stats", menu=stat_menu)
 root.config(menu=menu)
 root.mainloop()
 
-
-class TextWidget:
-    pass
