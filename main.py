@@ -2,13 +2,14 @@ import ast
 import codecs
 import inspect
 import os
+import time
 import tkinter as tk
 import unicodedata
+import plugins.base_plugin
 from tkinter import filedialog as fd
 from tkinter import font, Text, messagebox
 from tkinter.ttk import Combobox
 from docx import Document
-import plugins.base_plugin
 from importlib import import_module
 
 
@@ -17,37 +18,49 @@ class Model:
         self.filename = filename
 
     @staticmethod
-    def write_tags(file, text_info):
+    def write_tags(file, text_info, size):
         tags = text_info.dump("1.0", tk.END)
         tags_to_str = str(tags).strip('[]')
+        file.write('`````')
+        file.write(f'({size})')
         file.write(tags_to_str)
         print(tags_to_str)
 
-    def open_file(self, text_info, fonts):
+    def open_file(self, text_info, fonts, root):
         self.filename = fd.askopenfilename(filetypes=[("Text files", "*.txt")],
                                            initialdir='/')
         with codecs.open(self.filename, errors='ignore') as f:
+            file_size_in_bytes = os.stat(f.name).st_size
+            if file_size_in_bytes >= 52428800:
+                tk.messagebox.showerror("Exceeding file size",
+                                        "Your file is too big for editor. "
+                                        "There are may be problems with "
+                                        "opening the file.")
+                root.destroy()
             short_name = f.name.split('/')[-1]
             r_text_file = f.read()
-        tags_pos = r_text_file.find('(')
-        if tags_pos != 1:
+        tags_pos = r_text_file.find('`````')
+        if tags_pos != 1 and tags_pos != -1:
             text = r_text_file[:tags_pos]
         else:
             text = r_text_file
         text_info.delete(1.0, tk.END)
         text_info.insert(tk.END, text)
-        if tags_pos != 1:
-            tags = r_text_file[tags_pos:]
+        if tags_pos != 1 and tags_pos != -1:
+            tags = r_text_file[tags_pos + 9:]
+            size = int(r_text_file[tags_pos + 6:tags_pos + 8])
             self.get_format_from_tags(tags, text_info, fonts)
+        else:
+            size = 14
 
-        return short_name
+        return short_name, size
 
     @staticmethod
     def create_file(text_info):
         text_info.delete(1.0, tk.END)
         return "New"
 
-    def save_as_file(self, text_info):
+    def save_as_file(self, text_info, size):
         file_types = [("Text File", "*.txt"), ("All files", "*.*")]
         self.filename = fd.asksaveasfilename(confirmoverwrite=True,
                                              defaultextension=file_types,
@@ -58,22 +71,23 @@ class Model:
         save_file = open(self.filename, 'w+')
         normalized_content = unicodedata.normalize('NFC', content)
         save_file.write(normalized_content)
-        self.write_tags(save_file, text_info)
+        time.sleep(3)
+        self.write_tags(save_file, text_info, size)
         save_file.close()
         short_name = self.filename.split('/')[-1]
 
         return short_name
 
-    def save(self, text_info):
+    def save(self, text_info, size):
         print(self.filename)
         if self.filename == "":
-            self.save_as_file(text_info)
+            self.save_as_file(text_info, size)
         else:
             content = str(text_info.get(1.0, tk.END))
             normalized_content = unicodedata.normalize('NFC', content)
             save_file = open(self.filename, 'w+')
             save_file.write(normalized_content)
-            self.write_tags(save_file, text_info)
+            self.write_tags(save_file, text_info, size)
             save_file.close()
             short_name = self.filename.split('/')[-1]
 
@@ -111,7 +125,9 @@ class Controller:
         self.view = view
 
     def open_file(self):
-        name = self.model.open_file(self.view.text_info, self.view.fonts)
+        name, size = self.model.open_file(self.view.text_info, self.view.fonts,
+                                          self.view.root)
+        self.change_fonts(self.view.fonts, size)
         self.view.root.title(name)
 
     def create_file(self):
@@ -119,11 +135,11 @@ class Controller:
         self.view.root.title(name)
 
     def save_as_file(self):
-        name = self.model.save_as_file(self.view.text_info)
+        name = self.model.save_as_file(self.view.text_info, self.view.font_size)
         self.view.root.title(name)
 
     def save(self):
-        name = self.model.save(self.view.text_info)
+        name = self.model.save(self.view.text_info, self.view.font_size)
         self.view.root.title(name)
 
     def close_file(self):
@@ -174,10 +190,13 @@ class Controller:
 
     def change_size(self, event):
         selected_size = int(event.widget.get())
-        self.view.text_info.config(font=('Helvetica', selected_size))
         self.change_fonts(self.view.fonts, selected_size)
 
     def change_fonts(self, fonts: dict, selected_size):
+        self.view.text_info.config(font=('Helvetica', selected_size))
+        index = self.view.sizes.index(selected_size)
+        self.view.sizes_combobox.current(index)
+        self.view.font_size = selected_size
         fonts.update({"default": font.Font(size=selected_size),
                       "bold": font.Font(size=selected_size, weight='bold'),
                       "italic": font.Font(size=selected_size, slant='italic'),
@@ -255,7 +274,7 @@ class View:
 
         # endregion
 
-        self.sizes = [8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
+        self.sizes = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
         self.sizes_combobox = Combobox(self.fontbar_frame, values=self.sizes,
                                        state="readonly")
         self.sizes_combobox.current(2)
@@ -279,22 +298,28 @@ class View:
                         plugin_installer = obj(self)
                         plugin_installer.install()
 
-    def set_controller(self, controller):
-        self.file_menu.add_command(label="New", command=controller.create_file)
-        self.file_menu.add_command(label="Open", command=controller.open_file)
-        self.file_menu.add_command(label="Save", command=controller.save)
+    def set_controller(self, editor_controller):
+        self.file_menu.add_command(label="New",
+                                   command=editor_controller.create_file)
+        self.file_menu.add_command(label="Open",
+                                   command=editor_controller.open_file)
+        self.file_menu.add_command(label="Save", command=editor_controller.save)
         self.file_menu.add_command(label="Save as",
-                                   command=controller.save_as_file)
-        self.file_menu.add_command(label="Close", command=controller.close_file)
+                                   command=editor_controller.save_as_file)
+        self.file_menu.add_command(label="Close",
+                                   command=editor_controller.close_file)
         self.file_menu.add_command(label="To docx",
-                                   command=controller.export_to_docx)
+                                   command=editor_controller.export_to_docx)
         self.menu.add_cascade(label="File", menu=self.file_menu)
         self.root.config(menu=self.menu)
-        self.sizes_combobox.bind("<<ComboboxSelected>>", controller.change_size)
-        self.bold_button.configure(command=controller.get_bold_text)
-        self.italic_button.configure(command=controller.get_italic_text)
-        self.underline_button.configure(command=controller.get_underline_text)
-        self.overstrike_button.configure(command=controller.get_overstrike_text)
+        self.sizes_combobox.bind("<<ComboboxSelected>>",
+                                 editor_controller.change_size)
+        self.bold_button.configure(command=editor_controller.get_bold_text)
+        self.italic_button.configure(command=editor_controller.get_italic_text)
+        self.underline_button.configure(command=editor_controller.
+                                        get_underline_text)
+        self.overstrike_button.configure(command=editor_controller
+                                         .get_overstrike_text)
 
         self.install_plugins()
 
