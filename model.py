@@ -20,7 +20,7 @@ class Model:
         file.write('`````')
         file.write(f'({size})')
         file.write(tags_to_str)
-        print(tags_to_str)
+        # print(tags_to_str)
 
     def open_file(self, text_info, fonts, root):
         self.filename = fd.askopenfilename(filetypes=[("Text files", "*.txt")],
@@ -75,7 +75,6 @@ class Model:
         return short_name
 
     def save(self, text_info, size):
-        print(self.filename)
         if self.filename == "":
             self.save_as_file(text_info, size)
         else:
@@ -105,7 +104,7 @@ class Model:
         current_font = None
         start_symbol = None
         for t in tags_list:
-            print(t)
+            # print(t)
             if t[0] == 'tagon' and t[1] in fonts:
                 current_font = t[1]
                 start_symbol = t[2]
