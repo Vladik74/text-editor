@@ -1,14 +1,17 @@
 import inspect
 import os
 import tkinter as tk
+import traceback
+
 import plugins.base_plugin
-from tkinter import font, Text
+from tkinter import font, Text, messagebox
 from tkinter.ttk import Combobox
 from importlib import import_module
 
 
 class View:
     def __init__(self):
+        tk.Tk.report_callback_exception = callback_error
         self.root = tk.Tk()
         self.scrollbar = tk.Scrollbar(self.root)
         self.root.geometry("1200x2400")
@@ -117,7 +120,13 @@ class View:
                                         get_underline_text)
         self.overstrike_button.configure(command=editor_controller
                                          .get_overstrike_text)
-
         self.install_plugins()
 
         self.root.mainloop()
+
+
+def callback_error(self, *args):
+    print(args)
+    exception_type = traceback.format_exception(args[0], args[1], args[2])[-1]
+    message = "Error message:" + '\n' + exception_type
+    messagebox.showwarning("Error!", message)

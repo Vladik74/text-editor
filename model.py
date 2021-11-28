@@ -96,7 +96,7 @@ class Model:
             run = doc.add_paragraph(string).add_run()
             fontt = run.font
             fontt.italic = True
-        doc.save("C:/Users/vlad0/OneDrive/Документы/tkdoc.docx")
+        doc.save('demo.docx')
 
     @staticmethod
     def get_format_from_tags(tags: str, text_info, fonts):

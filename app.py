@@ -1,5 +1,3 @@
-import sys
-
 from view import View
 from model import Model
 from controller import Controller

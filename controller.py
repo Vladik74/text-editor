@@ -1,4 +1,3 @@
-import tkinter
 import tkinter as tk
 from tkinter import font, messagebox
 
@@ -38,55 +37,43 @@ class Controller:
 
     def get_bold_text(self):
         self.view.text_info.tag_configure("bold", font=self.view.fonts["bold"])
-        try:
-            current_tags = self.view.text_info.tag_names("sel.first")
-            if "bold" in current_tags:
-                self.view.text_info.tag_remove("bold", "sel.first", "sel.last")
-            else:
-                self.view.text_info.tag_add("bold", "sel.first", "sel.last")
-        except tk.TclError:
-            return
+        current_tags = self.view.text_info.tag_names("sel.first")
+        if "bold" in current_tags:
+            self.view.text_info.tag_remove("bold", "sel.first", "sel.last")
+        else:
+            self.view.text_info.tag_add("bold", "sel.first", "sel.last")
 
     def get_italic_text(self):
         self.view.text_info.tag_configure("italic",
                                           font=self.view.fonts["italic"])
-        try:
-            current_tags = self.view.text_info.tag_names("sel.first")
-            if "italic" in current_tags:
-                self.view.text_info.tag_remove("italic", "sel.first",
-                                               "sel.last")
-            else:
-                self.view.text_info.tag_add("italic", "sel.first", "sel.last")
-        except tk.TclError:
-            return
+        current_tags = self.view.text_info.tag_names("sel.first")
+        if "italic" in current_tags:
+            self.view.text_info.tag_remove("italic", "sel.first",
+                                           "sel.last")
+        else:
+            self.view.text_info.tag_add("italic", "sel.first", "sel.last")
 
     def get_underline_text(self):
         self.view.text_info.tag_configure("underline",
                                           font=self.view.fonts["underline"])
-        try:
-            current_tags = self.view.text_info.tag_names("sel.first")
-            if "underline" in current_tags:
-                self.view.text_info.tag_remove("underline", "sel.first",
-                                               "sel.last")
-            else:
-                self.view.text_info.tag_add("underline", "sel.first",
-                                            "sel.last")
-        except tk.TclError:
-            return
+        current_tags = self.view.text_info.tag_names("sel.first")
+        if "underline" in current_tags:
+            self.view.text_info.tag_remove("underline", "sel.first",
+                                           "sel.last")
+        else:
+            self.view.text_info.tag_add("underline", "sel.first",
+                                        "sel.last")
 
     def get_overstrike_text(self):
         self.view.text_info.tag_configure("overstrike",
                                           font=self.view.fonts["overstrike"])
-        try:
-            current_tags = self.view.text_info.tag_names("sel.first")
-            if "overstrike" in current_tags:
-                self.view.text_info.tag_remove("overstrike", "sel.first",
-                                               "sel.last")
-            else:
-                self.view.text_info.tag_add("overstrike", "sel.first",
-                                            "sel.last")
-        except tk.TclError:
-            return
+        current_tags = self.view.text_info.tag_names("sel.first")
+        if "overstrike" in current_tags:
+            self.view.text_info.tag_remove("overstrike", "sel.first",
+                                           "sel.last")
+        else:
+            self.view.text_info.tag_add("overstrike", "sel.first",
+                                        "sel.last")
 
     def change_size(self, event):
         selected_size = int(event.widget.get())
